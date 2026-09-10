@@ -1,0 +1,251 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>輪值人員平時考核(初評)</title>
+  <style>
+    :root {
+      --sea: #497AB7;
+      --maritime: #B7D0EA;
+      --ice: #F0F4F8;
+      --regatta: #2D3E4E;
+      --text-muted: #627D98;
+    }
+    body {
+      background-color: var(--ice);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: var(--regatta);
+      padding-bottom: 120px;
+      letter-spacing: 0.03em;
+    }
+    .container-fluid { max-width: 1400px; padding-top: 20px; }
+    .header-section {
+      background: linear-gradient(135deg, var(--sea), #35639C);
+      color: white; padding: 30px 20px; border-radius: 16px; text-align: center; margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(73,122,183,0.2);
+    }
+    .header-section h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; }
+    .header-desc { font-size: 0.88rem; line-height: 1.8; text-align: left; max-width: 800px; margin: 10px auto 0; padding: 15px; background: rgba(255,255,255,0.12); border-radius: 10px; }
+    #staffListContainer { display: flex; flex-wrap: wrap; gap: 20px; }
+    .staff-card { flex: 0 0 calc(33.333% - 14px); min-width: 350px; border: 1px solid rgba(183,208,234,0.3); border-radius: 16px; padding: 20px; background: white; box-shadow: 0 6px 12px rgba(0,0,0,0.03); }
+    @media (max-width: 1100px) { .staff-card { flex: 0 0 calc(50% - 10px); } }
+    @media (max-width: 768px) { .staff-card { flex: 0 0 100%; padding: 15px; } }
+    .staff-name { color: var(--sea); font-weight: 700; font-size: 1.25rem; border-bottom: 2px solid var(--ice); padding-bottom: 8px; margin-bottom: 15px; }
+    .section-title { font-weight: 700; background: #E1EBF5; color: #33547A; padding: 4px 14px; border-radius: 15px; font-size: 0.82rem; margin-top: 18px; display: inline-block; }
+    .question-text { font-size: 0.9rem; margin: 12px 0 8px 0; font-weight: 600; color: var(--regatta); }
+    .option-group { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .option-group label { cursor: pointer; touch-action: manipulation; }
+    .radio-circle { display: none; }
+    .circle-label { display: inline-block; width: 40px; height: 40px; line-height: 36px; border-radius: 50%; border: 2px solid #A1BCCC; background: white; cursor: pointer; text-align: center; font-size: 0.95rem; font-weight: 700; color: #55728F; transition: all 0.2s ease; touch-action: manipulation; user-select: none; }
+    .radio-circle:checked + .circle-label { background: var(--sea); color: white; border-color: var(--sea); box-shadow: 0 3px 8px rgba(73,122,183,0.4); }
+    .form-control { border: 1px solid #C4D6E7; border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; }
+    .form-control:focus { border-color: var(--sea); box-shadow: 0 0 0 3px rgba(73,122,183,0.15); }
+    .comment-box { font-size: 0.88rem; margin-top: 10px; resize: none; }
+    .action-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 15px; box-shadow: 0 -5px 20px rgba(0,0,0,0.06); display: flex; gap: 15px; z-index: 1000; justify-content: center; }
+    .btn-save { background: #D4E4F1; color: #2D507B; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; white-space: nowrap; width: 160px; transition: all 0.2s; }
+    .btn-save:hover { background: var(--maritime); }
+    .btn-submit { background: var(--sea); color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: 700; font-size: 0.95rem; white-space: nowrap; width: 180px; box-shadow: 0 4px 12px rgba(73,122,183,0.3); transition: all 0.2s; }
+    .btn-submit:hover { background: #35639C; }
+    .hidden { display: none; }
+    .step-box { max-width: 450px; margin: 60px auto; background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid rgba(183,208,234,0.5); text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="header-section">
+      <h1 id="pageTitle">輪值人員平時考核(初評)</h1>
+      <div class="header-desc">
+        提醒：必須完成所有同仁的評分方可送出。<br>
+        * 第一部分(團隊面向)及第二部分(個人面向)：請評1-5分(非常差1→差2→普通3→好4→非常好5)。<br>
+        * 第三部分(建議考績初評分數)：請參考甲、乙等第給予建議分數(甲80分以上、乙上75-79、乙下70-74)。<br>
+        * 評語為選填：每位同仁下方設有選填評語區，歡迎提供具體建議。
+      </div>
+    </div>
+
+    <div id="loadingBox" class="step-box">
+      <div class="spinner-border text-primary mb-3"></div>
+      <p>正在驗證身分...</p>
+    </div>
+
+    <div id="errorBox" class="step-box hidden">
+      <h4 class="text-danger mb-3">連結無效或已失效</h4>
+      <p>請確認您使用的連結是否正確，如有疑問請聯繫系統管理員。</p>
+    </div>
+
+    <div id="alreadyDoneBox" class="step-box hidden">
+      <h4 class="mb-3" style="color:var(--sea);">您已完成提交</h4>
+      <p>系統顯示您先前已完成評分提交。如需修改，請聯繫系統管理員。</p>
+    </div>
+
+    <div id="step2" class="hidden">
+      <div class="alert alert-light bg-white border-0 shadow-sm mb-4">
+        評核人：<span id="currentEvaluator" class="fw-bold" style="color: var(--sea);"></span>
+      </div>
+      <form id="megaForm">
+        <div id="staffListContainer"></div>
+      </form>
+      <div class="action-bar">
+        <button type="button" class="btn btn-save" onclick="saveProgress(true)">暫存進度</button>
+        <button type="button" class="btn btn-submit" onclick="submitFinal()">提交所有評分</button>
+      </div>
+    </div>
+    <div id="statusMsg" class="text-center h4 mt-5"></div>
+  </div>
+
+<script>
+  // ====== 設定區 ======
+  // 部署 Apps Script 後，把「網頁應用程式網址」貼在這裡
+  const API_URL = 'https://script.google.com/macros/s/AKfycbym6ej_rTiuW9nEU74izz6CFzPJdCiUjzxo7sUeTjURhhCy8bDTpskl_zIMiYVIEh4n/exec';
+
+  // 40位受評同仁名單，改由後端 whoami 回應動態帶入（Sheet 上「受評名單」分頁異動時，這裡自動同步，不用改程式碼）
+  let staffNames = [];
+
+  // token 從網址列取得，例如：https://yourname.github.io/xxx/?t=e7k2m9pQ4xR1
+  const token = new URLSearchParams(window.location.search).get('t');
+  let selectedEvaluator = "";
+
+  function show(id) {
+    ['loadingBox','errorBox','alreadyDoneBox','step2'].forEach(x => document.getElementById(x).classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  async function init() {
+    if (!token) { show('errorBox'); return; }
+    try {
+      const res = await fetch(`${API_URL}?action=whoami&token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (!data.valid || data.role !== 'evaluator') { show('errorBox'); return; }
+
+      selectedEvaluator = data.name;
+      staffNames = data.staffNames;
+      document.getElementById('currentEvaluator').innerText = selectedEvaluator;
+
+      const statusRes = await fetch(`${API_URL}?action=myStatus&token=${encodeURIComponent(token)}`);
+      const statusData = await statusRes.json();
+      if (statusData.submitted) { show('alreadyDoneBox'); return; }
+
+      show('step2');
+      renderStaffCards();
+      loadProgress();
+    } catch (err) {
+      show('errorBox');
+    }
+  }
+
+  function renderStaffCards() {
+    const container = document.getElementById('staffListContainer');
+    container.innerHTML = "";
+    const qs = [
+      {id:'t1', t:'政策與制度配合程度'}, {id:'t2', t:'值班勤務執行品質'}, {id:'t3', t:'團隊合作意願'},
+      {id:'p1', t:'心態積極度及學習意願'}, {id:'p2', t:'個人特質與未來發展潛力'}
+    ];
+    staffNames.forEach((name, i) => {
+      let h = `<div class="card staff-card">
+        <div class="staff-name">${i+1}. ${name}</div>
+        <div class="section-title">團隊面向 (非常差1→非常好5)</div>`;
+      qs.slice(0,3).forEach(q => h += renderQ(name, q));
+      h += `<div class="section-title">個人面向 (非常差1→非常好5)</div>`;
+      qs.slice(3,5).forEach(q => h += renderQ(name, q));
+      h += `<div class="section-title">建議考績初評分數 (必填)</div>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" class="form-control mt-2" name="s_${name}_final" min="70" max="90" required placeholder="請輸入 70-90">
+        <div class="section-title">評語 (選填)</div>
+        <textarea class="form-control comment-box" name="s_${name}_comment" rows="2" placeholder="請輸入對該同仁之具體建議..."></textarea>
+      </div>`;
+      container.innerHTML += h;
+    });
+  }
+
+  function renderQ(sn, q) {
+    return `<p class="question-text">${q.t}</p>
+      <div class="option-group">
+        ${[1, 2, 3, 4, 5].map(v => `
+          <label>
+            <input type="radio" class="radio-circle" name="s_${sn}_${q.id}" value="${v}" required onchange="saveProgress(false)">
+            <span class="circle-label">${v}</span>
+          </label>
+        `).join('')}
+      </div>`;
+  }
+
+  function saveProgress(showMsg) {
+    const data = {};
+    const formData = new FormData(document.getElementById('megaForm'));
+    for (let [key, value] of formData.entries()) { data[key] = value; }
+    localStorage.setItem('cache_' + token, JSON.stringify(data));
+    if (showMsg) alert('進度已儲存於本機。');
+  }
+
+  function loadProgress() {
+    const saved = localStorage.getItem('cache_' + token);
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    for (let k in data) {
+      const el = document.getElementsByName(k);
+      if (el.length > 0) {
+        if (el[0].type === 'radio') {
+          Array.from(el).forEach(r => { if (r.value === data[k]) r.checked = true; });
+        } else { el[0].value = data[k]; }
+      }
+    }
+  }
+
+  function submitFinal() {
+    const form = document.getElementById('megaForm');
+    const formData = new FormData(form);
+    let missingList = [];
+
+    staffNames.forEach(n => {
+      const checkItems = [`s_${n}_t1`, `s_${n}_t2`, `s_${n}_t3`, `s_${n}_p1`, `s_${n}_p2`, `s_${n}_final`];
+      let incomplete = false;
+      checkItems.forEach(item => { if (!formData.get(item)) incomplete = true; });
+      if (incomplete) missingList.push(n);
+    });
+
+    if (missingList.length > 0) {
+      alert('提交失敗！下列同仁尚有欄位未評分：\n\n' + missingList.join('、'));
+      return;
+    }
+
+    if (!confirm('確認提交全部 ' + staffNames.length + ' 位同仁評分？一旦送出將無法透過網頁修改。')) return;
+
+    const payload = { token: token, scores: {} };
+    staffNames.forEach(n => {
+      payload.scores[n] = {
+        t1: formData.get(`s_${n}_t1`), t2: formData.get(`s_${n}_t2`), t3: formData.get(`s_${n}_t3`),
+        p1: formData.get(`s_${n}_p1`), p2: formData.get(`s_${n}_p2`),
+        final: formData.get(`s_${n}_final`), comment: formData.get(`s_${n}_comment`)
+      };
+    });
+
+    document.getElementById('step2').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary mb-3"></div><h3>正在傳送大筆評分資料，請稍候...</h3></div>';
+
+    // 用 text/plain 避開瀏覽器對跨網域 POST 的預檢請求 (Apps Script 不處理 OPTIONS)
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          localStorage.removeItem('cache_' + token);
+          document.getElementById('step2').classList.add('hidden');
+          document.getElementById('statusMsg').innerText = result.message;
+        } else {
+          alert(result.message || '提交失敗，請稍後再試。');
+          location.reload();
+        }
+      })
+      .catch(err => {
+        alert('提交發生錯誤：' + err);
+        location.reload();
+      });
+  }
+
+  init();
+</script>
+</body>
+</html>
