@@ -1,100 +1,444 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>輪值人員初評 - 管理儀表板</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <style>
-    :root { --sea: #497AB7; --ice: #F0F4F8; --regatta: #2D3E4E; }
-    body { background-color: var(--ice); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "Microsoft JhengHei", sans-serif; color: var(--regatta); }
-    .container-fluid { max-width: 1300px; padding-top: 20px; padding-bottom: 60px; }
-    .header-section { background: linear-gradient(135deg, var(--sea), #35639C); color: white; padding: 25px 20px; border-radius: 16px; text-align: center; margin-bottom: 20px; }
-    .nav-tabs .nav-link.active { background: var(--sea); color: white; border-color: var(--sea); }
-    .nav-tabs .nav-link { color: var(--regatta); font-weight: 600; }
-    table { font-size: 0.85rem; }
-    thead th { background: #E1EBF5; color: #33547A; position: sticky; top: 0; }
-    .table-wrap { max-height: 70vh; overflow: auto; background: white; border-radius: 12px; padding: 10px; }
-    .section-label { font-weight: 700; margin: 20px 0 10px; color: var(--sea); }
-    .step-box { max-width: 450px; margin: 60px auto; background: white; padding: 40px 30px; border-radius: 20px; text-align: center; }
-    .hidden { display: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>輪值人員初評 - 管理儀表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap');
+
+:root {
+  --paper: #F2F6FA;
+  --card: #FFFFFF;
+  --navy: #142338;
+  --navy-soft: #1D3050;
+  --navy-line: #2A3F5C;
+  --ink: #1C2B3A;
+  --muted: #6E8092;
+  --line: #E3EAF1;
+  --sea: #2F6FB0;
+  --sea-deep: #1F4E85;
+  --sea-tint: #EAF2FA;
+  --gold: #E8B44B;
+  --good: #2FA36B;
+  --warn: #E0A63E;
+  --risk: #D9704B;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { max-width: 1180px; margin: 0 auto; padding: 20px 20px 60px; }
+
+/* ---- Topbar ---- */
+.topbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 16px; margin-bottom: 22px;
+}
+.brand-block { display: flex; flex-direction: column; }
+.brand { font-size: 1.05rem; font-weight: 800; color: var(--sea-deep); letter-spacing: 0.01em; }
+.brand-sub { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+
+.period-tabs { display: flex; gap: 6px; background: var(--card); padding: 5px; border-radius: 999px; border: 1px solid var(--line); }
+.period-tab {
+  border: none; background: transparent; padding: 7px 16px; border-radius: 999px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 700; color: var(--muted); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.period-tab.active { background: var(--gold); color: #4A3410; }
+.period-tab:hover:not(.active) { background: var(--sea-tint); color: var(--sea-deep); }
+
+/* ---- Loading / error states ---- */
+.step-box { max-width: 420px; margin: 70px auto; background: var(--card); padding: 36px 28px; border-radius: 18px; text-align: center; box-shadow: 0 12px 30px rgba(20,35,56,0.06); }
+.spinner { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--sea); animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+.error-title { color: var(--risk); font-weight: 800; margin-bottom: 8px; }
+.muted-text { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+
+/* ---- Cards & grid ---- */
+.card {
+  background: var(--card); border-radius: 18px; padding: 22px;
+  box-shadow: 0 8px 24px rgba(20,35,56,0.05); border: 1px solid var(--line);
+}
+.card-label { font-size: 0.82rem; font-weight: 700; color: var(--sea-deep); margin-bottom: 14px; }
+
+.hero-grid { display: grid; grid-template-columns: 300px 1fr; gap: 18px; margin-bottom: 18px; }
+@media (max-width: 760px) { .hero-grid { grid-template-columns: 1fr; } }
+
+/* ---- Ring chart ---- */
+.ring-card { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ring-wrap { position: relative; width: 190px; height: 190px; }
+.ring-wrap svg { width: 100%; height: 100%; }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring-center-value { font-size: 2.1rem; font-weight: 800; color: var(--ink); line-height: 1; }
+.ring-center-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; font-weight: 600; }
+.legend { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.legend li { font-size: 0.82rem; color: var(--ink); display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.legend li b { margin-left: auto; font-weight: 800; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ---- KPI rows ---- */
+.kpi-card { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 480px) { .kpi-card { grid-template-columns: 1fr; } }
+.kpi { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.kpi:nth-last-child(-n+2) { border-bottom: none; }
+.kpi-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.kpi-value { font-size: 1.7rem; font-weight: 800; color: var(--ink); line-height: 1.1; }
+.kpi-sub { font-size: 0.78rem; color: var(--sea-deep); font-weight: 700; margin-top: 2px; }
+.kpi-value.accent-good { color: var(--good); }
+.kpi-value.accent-risk { color: var(--risk); }
+.kpi-value.accent-gold { color: #B2820F; }
+
+/* ---- Trend card (dark) ---- */
+.trend-card { background: linear-gradient(160deg, var(--navy), var(--navy-soft)); border: none; margin-bottom: 18px; }
+.trend-card .card-label { color: #A9C3DE; }
+.trend-card svg { width: 100%; height: auto; display: block; }
+
+/* ---- Compare bars ---- */
+.compare-card { margin-bottom: 18px; }
+.compare-row { display: grid; grid-template-columns: 70px 1fr 110px; align-items: center; gap: 12px; padding: 9px 0; }
+.compare-name { font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+.compare-track { height: 10px; background: var(--sea-tint); border-radius: 999px; overflow: hidden; }
+.compare-fill { height: 100%; background: linear-gradient(90deg, var(--sea), var(--sea-deep)); border-radius: 999px; }
+.compare-value { font-size: 0.85rem; font-weight: 800; color: var(--ink); text-align: right; }
+.compare-range { font-weight: 500; color: var(--muted); }
+
+/* ---- Table ---- */
+.table-card { overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+thead th { text-align: left; padding: 10px 12px; font-size: 0.76rem; color: var(--muted); font-weight: 700; border-bottom: 2px solid var(--line); white-space: nowrap; }
+tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.rank-cell { font-weight: 800; color: var(--sea-deep); width: 50px; }
+.name-cell { font-weight: 700; }
+.score-cell { font-weight: 800; border-radius: 8px; text-align: center; width: 90px; }
+.status-badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; font-weight: 700; }
+.status-ok { background: #E4F4EC; color: var(--good); }
+.status-pending { background: #FDEFE7; color: var(--risk); }
+</style>
 </head>
 <body>
-<div class="container-fluid">
-  <div class="header-section">
-    <h3 id="pageTitle">輪值人員初評 - 管理儀表板</h3>
+<div class="app">
+  <div class="topbar">
+    <div class="brand-block">
+      <span class="brand">輪值人員初評</span>
+      <span class="brand-sub">管理儀表板</span>
+    </div>
+    <nav class="period-tabs" id="periodTabs"></nav>
   </div>
 
   <div id="loadingBox" class="step-box">
-    <div class="spinner-border text-primary mb-3"></div>
-    <p>正在驗證身分...</p>
+    <div class="spinner"></div>
+    <p class="muted-text">正在驗證身分...</p>
   </div>
 
   <div id="errorBox" class="step-box hidden">
-    <h4 class="text-danger mb-3">連結無效或權限不足</h4>
-    <p>請確認您使用的連結是否正確，如有疑問請聯繫系統管理員。</p>
+    <div class="error-title">連結無效或權限不足</div>
+    <p class="muted-text">請確認您使用的連結是否正確，如有疑問請聯繫系統管理員。</p>
   </div>
 
   <div id="mainBox" class="hidden">
-    <ul class="nav nav-tabs mb-3" id="periodTabs"></ul>
-    <div id="content">
-      <div class="section-label">綜合評分結果</div>
-      <div class="table-wrap mb-4"><table class="table table-sm table-bordered" id="summaryTable"></table></div>
+    <section class="hero-grid">
+      <div class="card ring-card">
+        <div class="card-label">等第分布</div>
+        <div class="ring-wrap">
+          <svg id="ringChart" viewBox="0 0 200 200"></svg>
+          <div class="ring-center">
+            <div class="ring-center-value" id="ringCenterValue">--</div>
+            <div class="ring-center-label">受評人數</div>
+          </div>
+        </div>
+        <ul class="legend" id="ringLegend"></ul>
+      </div>
 
-      <div class="section-label">5位主任評分對照表（評分標準校準用）</div>
-      <div class="table-wrap"><table class="table table-sm table-bordered" id="comparisonTable"></table></div>
-    </div>
+      <div class="card kpi-card">
+        <div class="kpi">
+          <div class="kpi-label">全體平均分數</div>
+          <div class="kpi-value" id="kpiAvg">--</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">尚未完成評分</div>
+          <div class="kpi-value" id="kpiIncomplete">--</div>
+          <div class="kpi-sub">位同仁</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">最高分</div>
+          <div class="kpi-value accent-good" id="kpiMax">--</div>
+          <div class="kpi-sub" id="kpiMaxName"></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">最低分</div>
+          <div class="kpi-value accent-risk" id="kpiMin">--</div>
+          <div class="kpi-sub" id="kpiMinName"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card trend-card">
+      <div class="card-label">跨期平均分數趨勢</div>
+      <svg id="trendChart" viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
+    </section>
+
+    <section class="card compare-card">
+      <div class="card-label">5位主任評分對照（評分標準校準用）</div>
+      <div id="compareBars"></div>
+    </section>
+
+    <section class="card table-card">
+      <div class="card-label">綜合評分結果排名</div>
+      <div class="table-wrap"><table id="summaryTable"></table></div>
+    </section>
   </div>
 </div>
 
 <script>
   // 部署 Apps Script 後，把「網頁應用程式網址」貼在這裡（與 index.html 共用同一支 API_URL）
-  const API_URL = 'https://script.google.com/macros/s/AKfycbwbWRQBQA8YecfCqzx63PKcdDQvtYuYLqe2IsZVpTZ_-hDl85N7YwzJQGdxfR2uWLw/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbym6ej_rTiuW9nEU74izz6CFzPJdCiUjzxo7sUeTjURhhCy8bDTpskl_zIMiYVIEh4n/exec';
+
+  const COLOR = { good: '#2FA36B', warn: '#E0A63E', risk: '#D9704B', muted: '#D7E0E9', gold: '#E8B44B' };
 
   const token = new URLSearchParams(window.location.search).get('t');
   let periodsCache = {};
 
   function show(id) {
-    ['loadingBox','errorBox','mainBox'].forEach(x => document.getElementById(x).classList.add('hidden'));
+    ['loadingBox', 'errorBox', 'mainBox'].forEach(x => document.getElementById(x).classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
   }
 
-  function renderTable(tableEl, rows) {
-    tableEl.innerHTML = '';
-    if (!rows || rows.length === 0) {
-      tableEl.innerHTML = '<tbody><tr><td class="text-muted p-3">此期別尚無資料</td></tr></tbody>';
+  // 依欄位名稱片段找出實際的物件 key，避免 Sheet 標題文字有些微差異就整個壞掉
+  function findKey(obj, patterns) {
+    const keys = Object.keys(obj || {});
+    for (const p of patterns) {
+      const hit = keys.find(k => k.includes(p));
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function buildSummaryFieldMap(sampleRow) {
+    return {
+      name: findKey(sampleRow, ['同仁姓名', '姓名']),
+      finalScore: findKey(sampleRow, ['建議考績平均', '建議考績初評分數', '建議考績']),
+      rank: findKey(sampleRow, ['名次']),
+      status: findKey(sampleRow, ['誰還沒評分', '還沒評分', '評分狀態'])
+    };
+  }
+
+  function buildComparisonFieldMap(sampleRow) {
+    return {
+      evaluator: findKey(sampleRow, ['評核人']),
+      avg: findKey(sampleRow, ['平均分數', '平均分']),
+      max: findKey(sampleRow, ['最高分']),
+      min: findKey(sampleRow, ['最低分'])
+    };
+  }
+
+  function computeSummaryStats(summary, fm) {
+    const scores = summary.map(r => Number(r[fm.finalScore])).filter(n => !isNaN(n));
+    const total = summary.length;
+    const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    const max = scores.length ? Math.max(...scores) : null;
+    const min = scores.length ? Math.min(...scores) : null;
+    const maxRow = summary.find(r => Number(r[fm.finalScore]) === max);
+    const minRow = summary.find(r => Number(r[fm.finalScore]) === min);
+    const incomplete = summary.filter(r => {
+      const v = (r[fm.status] || '').toString();
+      return v && !v.includes('已全數');
+    }).length;
+    const bandCounts = { '甲': 0, '乙上': 0, '乙下': 0, '其他': 0 };
+    scores.forEach(s => {
+      if (s >= 80) bandCounts['甲']++;
+      else if (s >= 75) bandCounts['乙上']++;
+      else if (s >= 70) bandCounts['乙下']++;
+      else bandCounts['其他']++;
+    });
+    return { total, avg, max, min, maxRow, minRow, incomplete, bandCounts };
+  }
+
+  function renderHero(stats, fm) {
+    document.getElementById('kpiAvg').textContent = stats.avg != null ? stats.avg.toFixed(1) : '--';
+    document.getElementById('kpiIncomplete').textContent = stats.incomplete;
+    document.getElementById('kpiMax').textContent = stats.max != null ? stats.max : '--';
+    document.getElementById('kpiMaxName').textContent = stats.maxRow ? (stats.maxRow[fm.name] || '') : '';
+    document.getElementById('kpiMin').textContent = stats.min != null ? stats.min : '--';
+    document.getElementById('kpiMinName').textContent = stats.minRow ? (stats.minRow[fm.name] || '') : '';
+    document.getElementById('ringCenterValue').textContent = stats.total;
+  }
+
+  function renderRing(bandCounts, total) {
+    const svg = document.getElementById('ringChart');
+    const cx = 100, cy = 100, r = 80, sw = 24;
+    const circumference = 2 * Math.PI * r;
+    const colorMap = { '甲': COLOR.good, '乙上': COLOR.warn, '乙下': COLOR.risk, '其他': COLOR.muted };
+    let offset = 0;
+    let content = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${COLOR.muted}" stroke-width="${sw}" opacity="0.35"/>`;
+    Object.entries(bandCounts).forEach(([label, count]) => {
+      if (!count || !total) return;
+      const frac = count / total;
+      const len = frac * circumference;
+      content += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colorMap[label]}" stroke-width="${sw}"
+        stroke-dasharray="${len} ${circumference - len}" stroke-dashoffset="${-offset}"
+        transform="rotate(-90 ${cx} ${cy})"/>`;
+      offset += len;
+    });
+    svg.innerHTML = content;
+
+    const legend = document.getElementById('ringLegend');
+    legend.innerHTML = Object.entries(bandCounts).filter(([, c]) => c > 0).map(([label, count]) => `
+      <li><span class="dot" style="background:${colorMap[label]}"></span>${label}等<b>${count} 人</b></li>
+    `).join('') || '<li class="muted-text">尚無資料</li>';
+  }
+
+  function renderCompareBars(comparison, cfm) {
+    const container = document.getElementById('compareBars');
+    if (!comparison || !comparison.length) {
+      container.innerHTML = '<p class="muted-text">此期別尚無資料</p>';
       return;
     }
-    const headers = Object.keys(rows[0]);
-    let thead = '<thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead>';
-    let tbody = '<tbody>' + rows.map(r => '<tr>' + headers.map(h => `<td>${r[h] ?? ''}</td>`).join('') + '</tr>').join('') + '</tbody>';
-    tableEl.innerHTML = thead + tbody;
+    const scaleMin = 70, scaleMax = 90;
+    container.innerHTML = comparison.map(r => {
+      const avg = Number(r[cfm.avg]);
+      const pct = Math.max(4, Math.min(100, ((avg - scaleMin) / (scaleMax - scaleMin)) * 100));
+      return `
+        <div class="compare-row">
+          <div class="compare-name">${r[cfm.evaluator] ?? ''}</div>
+          <div class="compare-track"><div class="compare-fill" style="width:${pct}%"></div></div>
+          <div class="compare-value">${isNaN(avg) ? '--' : avg.toFixed(1)}<span class="compare-range"> (${r[cfm.min] ?? '-'}–${r[cfm.max] ?? '-'})</span></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function lerpColor(a, b, k) {
+    return [Math.round(a[0] + (b[0] - a[0]) * k), Math.round(a[1] + (b[1] - a[1]) * k), Math.round(a[2] + (b[2] - a[2]) * k)];
+  }
+  function heatColor(t) {
+    const stops = [[217, 112, 75], [224, 166, 62], [47, 163, 107]];
+    const c = t <= 0.5 ? lerpColor(stops[0], stops[1], t / 0.5) : lerpColor(stops[1], stops[2], (t - 0.5) / 0.5);
+    return `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
+  }
+
+  function renderSummaryTable(summary, fm) {
+    const table = document.getElementById('summaryTable');
+    const scores = summary.map(r => Number(r[fm.finalScore])).filter(n => !isNaN(n));
+    const max = Math.max(...scores), min = Math.min(...scores);
+    const sorted = [...summary].sort((a, b) => (Number(a[fm.rank]) || 999) - (Number(b[fm.rank]) || 999));
+
+    const rows = sorted.map(r => {
+      const score = Number(r[fm.finalScore]);
+      const t = (max === min || isNaN(score)) ? 0.5 : (score - min) / (max - min);
+      const bg = heatColor(t);
+      const statusVal = (r[fm.status] || '').toString();
+      const statusClass = statusVal.includes('已全數') ? 'status-ok' : 'status-pending';
+      return `
+        <tr>
+          <td class="rank-cell">${r[fm.rank] ?? ''}</td>
+          <td class="name-cell">${r[fm.name] ?? ''}</td>
+          <td class="score-cell" style="background:${bg}">${isNaN(score) ? '--' : score}</td>
+          <td><span class="status-badge ${statusClass}">${statusVal || '—'}</span></td>
+        </tr>
+      `;
+    }).join('');
+
+    table.innerHTML = `
+      <thead><tr><th>名次</th><th>同仁姓名</th><th>建議考績</th><th>評分狀態</th></tr></thead>
+      <tbody>${rows}</tbody>
+    `;
+  }
+
+  function renderTabs(periods) {
+    const tabsEl = document.getElementById('periodTabs');
+    tabsEl.innerHTML = periods.map((p, i) => `
+      <button class="period-tab ${i === 0 ? 'active' : ''}" data-period="${p.key}" onclick="loadPeriod('${p.key}')">${p.name}</button>
+    `).join('');
+  }
+
+  function setActiveTab(periodKey) {
+    document.querySelectorAll('.period-tab').forEach(el => {
+      el.classList.toggle('active', el.dataset.period === periodKey);
+    });
+  }
+
+  async function fetchPeriod(periodKey) {
+    if (periodsCache[periodKey]) return periodsCache[periodKey];
+    const res = await fetch(`${API_URL}?action=getResults&token=${encodeURIComponent(token)}&period=${encodeURIComponent(periodKey)}`);
+    const data = await res.json();
+    periodsCache[periodKey] = data;
+    return data;
   }
 
   async function loadPeriod(periodKey) {
-    document.querySelectorAll('#periodTabs .nav-link').forEach(el => {
-      el.classList.toggle('active', el.dataset.period === periodKey);
+    setActiveTab(periodKey);
+    const data = await fetchPeriod(periodKey);
+    if (data.error || !data.summary || !data.summary.length) {
+      document.getElementById('summaryTable').innerHTML = `<tbody><tr><td class="muted-text" style="padding:16px;">${data.error || '此期別尚無資料'}</td></tr></tbody>`;
+      return;
+    }
+    const fm = buildSummaryFieldMap(data.summary[0]);
+    const stats = computeSummaryStats(data.summary, fm);
+    renderHero(stats, fm);
+    renderRing(stats.bandCounts, stats.total);
+    renderSummaryTable(data.summary, fm);
+
+    if (data.evaluatorComparison && data.evaluatorComparison.length) {
+      const cfm = buildComparisonFieldMap(data.evaluatorComparison[0]);
+      renderCompareBars(data.evaluatorComparison, cfm);
+    } else {
+      renderCompareBars([], null);
+    }
+  }
+
+  function renderTrendChart(points) {
+    const svg = document.getElementById('trendChart');
+    const valid = points.filter(p => p.avg != null);
+    if (valid.length < 1) { svg.innerHTML = ''; return; }
+
+    const w = 600, h = 200, padX = 50, padY = 34;
+    const values = valid.map(p => p.avg);
+    const minV = Math.min(...values) - 2;
+    const maxV = Math.max(...values) + 2;
+    const stepX = points.length > 1 ? (w - padX * 2) / (points.length - 1) : 0;
+    const scaleY = v => h - padY - ((v - minV) / (maxV - minV || 1)) * (h - padY * 2);
+
+    const coords = points.map((p, i) => ({ x: padX + i * stepX, y: p.avg != null ? scaleY(p.avg) : null, ...p }));
+    const linePts = coords.filter(c => c.y != null).map(c => `${c.x},${c.y}`).join(' ');
+
+    let content = `<polyline points="${linePts}" fill="none" stroke="${COLOR.gold}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    coords.forEach(c => {
+      if (c.y == null) return;
+      content += `
+        <circle cx="${c.x}" cy="${c.y}" r="5" fill="${COLOR.gold}"/>
+        <text x="${c.x}" y="${c.y - 14}" text-anchor="middle" fill="#F2F6FA" font-size="13" font-weight="700">${c.avg.toFixed(1)}</text>
+        <text x="${c.x}" y="${h - 10}" text-anchor="middle" fill="#8FA6BE" font-size="12">${c.label}</text>
+      `;
     });
+    svg.innerHTML = content;
+  }
 
-    if (periodsCache[periodKey]) {
-      renderTable(document.getElementById('summaryTable'), periodsCache[periodKey].summary);
-      renderTable(document.getElementById('comparisonTable'), periodsCache[periodKey].evaluatorComparison);
-      return;
+  async function loadTrend(periods) {
+    // 設定裡通常是「本期在前、歷史在後」，趨勢圖要由舊到新排列
+    const chronological = [...periods].reverse();
+    const points = [];
+    for (const p of chronological) {
+      const data = await fetchPeriod(p.key);
+      if (data.summary && data.summary.length) {
+        const fm = buildSummaryFieldMap(data.summary[0]);
+        const stats = computeSummaryStats(data.summary, fm);
+        points.push({ label: p.name, avg: stats.avg });
+      } else {
+        points.push({ label: p.name, avg: null });
+      }
     }
-
-    document.getElementById('summaryTable').innerHTML = '<tbody><tr><td class="p-3">載入中...</td></tr></tbody>';
-    document.getElementById('comparisonTable').innerHTML = '';
-
-    const res = await fetch(`${API_URL}?action=getResults&token=${encodeURIComponent(token)}&period=${encodeURIComponent(periodKey)}`);
-    const data = await res.json();
-    if (data.error) {
-      document.getElementById('summaryTable').innerHTML = `<tbody><tr><td class="text-danger p-3">${data.error}</td></tr></tbody>`;
-      return;
-    }
-    periodsCache[periodKey] = data;
-    renderTable(document.getElementById('summaryTable'), data.summary);
-    renderTable(document.getElementById('comparisonTable'), data.evaluatorComparison);
+    renderTrendChart(points);
   }
 
   async function init() {
@@ -106,16 +450,12 @@
 
       const periodsRes = await fetch(`${API_URL}?action=listPeriods&token=${encodeURIComponent(token)}`);
       const periodsData = await periodsRes.json();
+      const periods = periodsData.periods || [];
 
-      const tabsEl = document.getElementById('periodTabs');
-      tabsEl.innerHTML = periodsData.periods.map((p, i) => `
-        <li class="nav-item">
-          <a class="nav-link ${i === 0 ? 'active' : ''}" href="#" data-period="${p.key}" onclick="loadPeriod('${p.key}'); return false;">${p.name}</a>
-        </li>
-      `).join('');
-
+      renderTabs(periods);
       show('mainBox');
-      if (periodsData.periods.length > 0) loadPeriod(periodsData.periods[0].key);
+      if (periods.length) await loadPeriod(periods[0].key);
+      loadTrend(periods);
     } catch (err) {
       show('errorBox');
     }
